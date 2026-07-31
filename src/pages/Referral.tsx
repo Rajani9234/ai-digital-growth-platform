@@ -4,6 +4,7 @@ import {
   Send, Bot, User, Copy, Share2, Zap, Gift,
 } from 'lucide-react';
 import type { ReferralPartner } from '../types';
+import { registerPartner } from '../utils/api';
 
 interface ChatMessage {
   role: 'bot' | 'user';
@@ -40,8 +41,10 @@ function getBotResponse(input: string): string {
   return 'Great question! 😊 I\'m here to help you understand the JhaTech Referral Program. You can ask me about earnings, how to join, payment process, or how to promote. Or just click one of the quick questions below!';
 }
 
-const generateCode = (name: string): string =>
-  'JT' + name.toUpperCase().replace(/\s/g, '').slice(0, 4) + Math.floor(1000 + Math.random() * 9000);
+// generateCode used as local fallback when backend is unavailable
+function generateCode(name: string): string {
+  return 'JT' + name.toUpperCase().replace(/\s/g, '').slice(0, 4) + Math.floor(1000 + Math.random() * 9000);
+}
 
 const INITIAL_FORM: ReferralPartner = { name: '', phone: '', email: '', city: '' };
 
@@ -72,13 +75,33 @@ export default function Referral() {
     return Object.keys(e).length === 0;
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    const code = generateCode(form.name);
-    const newPartner = { ...form, referralCode: code, totalReferrals: 0, totalEarnings: 0 };
-    setPartner(newPartner);
-    setReg(true);
+    try {
+      const res = await registerPartner({
+        name:  form.name,
+        phone: form.phone,
+        email: form.email,
+        city:  form.city,
+      });
+      const p = res.partner;
+      setPartner({
+        name:           p.name,
+        phone:          p.phone,
+        email:          p.email,
+        city:           p.city,
+        referralCode:   p.referral_code,
+        totalReferrals: p.total_referrals,
+        totalEarnings:  p.total_earnings,
+      });
+      setReg(true);
+    } catch (_err) {
+      // Fallback: generate code locally if backend not available
+      const code = generateCode(form.name);
+      setPartner({ ...form, referralCode: code, totalReferrals: 0, totalEarnings: 0 });
+      setReg(true);
+    }
   };
 
   const sendMessage = (text?: string) => {

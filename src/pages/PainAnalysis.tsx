@@ -4,7 +4,7 @@ import {
   TrendingUp, Clock, Target, FileText, RotateCcw, MessageCircle,
 } from 'lucide-react';
 import type { PainPointFormData, AIReport } from '../types';
-import { generateBusinessReport } from '../utils/aiEngine';
+import { submitPainAnalysis } from '../utils/api';
 
 const CHALLENGES = [
   { id: 'no-website',        label: 'No website / online presence' },
@@ -67,15 +67,49 @@ export default function PainAnalysis() {
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
     setStep('loading');
-    // Simulate AI processing delay
-    setTimeout(() => {
+    try {
+      const res = await submitPainAnalysis({
+        business_name:      form.businessName,
+        business_type:      form.businessType,
+        city:               form.city,
+        monthly_revenue:    form.monthlyRevenue,
+        current_challenges: form.currentChallenges,
+        online_presence:    form.onlinePresence,
+        target_audience:    form.targetAudience,
+        budget:             form.budget,
+        additional_info:    form.additionalInfo,
+      });
+
+      // Map PHP API response to AIReport shape used by the UI
+      const r = res.report;
+      setReport({
+        businessName:    form.businessName,
+        summary:         r.summary,
+        challenges:      r.challenges,
+        recommendations: r.recommendations.map(rec => ({
+          priority:        rec.priority,
+          title:           rec.title,
+          description:     rec.description,
+          estimatedImpact: rec.estimated_impact,
+        })),
+        digitalScore:    r.digital_score,
+        actionPlan:      r.action_plan.map(p => ({
+          phase:    p.phase,
+          timeline: p.timeline,
+          tasks:    p.tasks,
+        })),
+      });
+      setStep('report');
+    } catch (err) {
+      // If backend unreachable fall back to local engine
+      const { generateBusinessReport } = await import('../utils/aiEngine');
       setReport(generateBusinessReport(form));
       setStep('report');
-    }, 2800);
+    }
   };
 
   const reset = () => { setForm(INITIAL); setReport(null); setStep('form'); };
