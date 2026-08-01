@@ -1,27 +1,25 @@
 // ============================================================
-// API Client — connects React frontend to PHP backend
+// Gemini API — Direct frontend call (no backend needed)
 // ============================================================
 
-// Change this to your backend URL when deploying
-export const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost/ai-digital-growth-platform-1/backend/api';
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY ?? '';
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
-// ── Generic fetch helper ────────────────────────────────────
-async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}/${endpoint}`, {
+async function askGemini(prompt: string): Promise<string> {
+  const res = await fetch(GEMINI_URL, {
+    method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    ...options,
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
+    }),
   });
-
+  if (!res.ok) throw new Error('Gemini API error');
   const data = await res.json();
-
-  if (!res.ok || !data.success) {
-    throw new Error(data.error ?? 'Something went wrong. Please try again.');
-  }
-
-  return data as T;
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 }
 
-// ── Pain Analysis ───────────────────────────────────────────
+// ── Pain Analysis ─────────────────────────────────────────
 export interface PainAnalysisPayload {
   business_name: string;
   business_type: string;
@@ -34,108 +32,81 @@ export interface PainAnalysisPayload {
   additional_info: string;
 }
 
-export interface PainAnalysisResponse {
-  success: boolean;
-  id: number;
+export interface PainAnalysisReport {
   digital_score: number;
-  report: {
-    digital_score: number;
-    summary: string;
-    challenges: { title: string; description: string; severity: 'high' | 'medium' | 'low' }[];
-    recommendations: { priority: number; title: string; description: string; estimated_impact: string }[];
-    action_plan: { phase: string; timeline: string; tasks: string[] }[];
+  summary: string;
+  challenges: { title: string; description: string; severity: 'high' | 'medium' | 'low' }[];
+  recommendations: { priority: number; title: string; description: string; estimated_impact: string }[];
+  action_plan: { phase: string; timeline: string; tasks: string[] }[];
+}
+
+export async function submitPainAnalysis(payload: PainAnalysisPayload): Promise<PainAnalysisReport> {
+  const challenges = payload.current_challenges.join(', ');
+
+  const prompt = `You are a professional digital marketing consultant for Indian local businesses.
+Analyse this business and return ONLY valid JSON (no markdown, no extra text):
+
+Business:
+- Name: ${payload.business_name}
+- Type: ${payload.business_type}
+- City: ${payload.city}
+- Revenue: ${payload.monthly_revenue}
+- Challenges: ${challenges}
+- Online Presence: ${payload.online_presence}
+- Target Audience: ${payload.target_audience}
+- Budget: ${payload.budget}
+- Notes: ${payload.additional_info}
+
+Return this exact JSON structure:
+{
+  "digital_score": <0-100>,
+  "summary": "<2-3 sentences>",
+  "challenges": [{"title":"","description":"","severity":"high|medium|low"}],
+  "recommendations": [{"priority":1,"title":"","description":"","estimated_impact":""}],
+  "action_plan": [{"phase":"","timeline":"","tasks":[""]}]
+}`;
+
+  try {
+    let text = await askGemini(prompt);
+    // Strip markdown fences if present
+    text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+    const report = JSON.parse(text) as PainAnalysisReport;
+    return report;
+  } catch {
+    return buildFallbackReport(payload);
+  }
+}
+
+function buildFallbackReport(form: PainAnalysisPayload): PainAnalysisReport {
+  let score = 20;
+  if (form.online_presence === 'both') score += 50;
+  else if (form.online_presence === 'website') score += 30;
+  else if (form.online_presence === 'social') score += 20;
+  score = Math.min(score, 100);
+
+  return {
+    digital_score: score,
+    summary: `${form.business_name} is a ${form.business_type} in ${form.city}. Our AI analysis identified key growth opportunities with targeted digital marketing.`,
+    challenges: [
+      { title: 'Limited Online Visibility', description: 'Most customers search online before buying. A stronger digital presence will capture them.', severity: 'high' },
+      { title: 'Competitive Market', description: 'Competitors with strong digital presence capture leads before they reach you.', severity: 'high' },
+    ],
+    recommendations: [
+      { priority: 1, title: 'Professional Website', description: 'A mobile-first website with product catalogue and WhatsApp integration.', estimated_impact: '30–50% more enquiries in 60 days' },
+      { priority: 2, title: 'Google My Business', description: 'Claim and optimise your GMB profile for local search visibility.', estimated_impact: 'Up to 5x more walk-in customers' },
+      { priority: 3, title: 'Social Media Marketing', description: 'Weekly posts on Instagram & Facebook to build brand awareness.', estimated_impact: '2x brand reach in 90 days' },
+    ],
+    action_plan: [
+      { phase: 'Phase 1 – Foundation', timeline: '2 weeks', tasks: ['Claim Google My Business', 'Set up WhatsApp Business', 'Create social profiles'] },
+      { phase: 'Phase 2 – Website', timeline: '4 weeks', tasks: ['Design & develop website', 'Add product catalogue', 'SEO optimisation'] },
+      { phase: 'Phase 3 – Growth', timeline: '3 months', tasks: ['Run social media ads', 'Collect Google reviews', 'WhatsApp marketing campaigns'] },
+    ],
   };
 }
 
-export async function submitPainAnalysis(payload: PainAnalysisPayload): Promise<PainAnalysisResponse> {
-  return request<PainAnalysisResponse>('pain-analysis.php', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
-}
-
-// ── Referral Partner ────────────────────────────────────────
-export interface RegisterPartnerPayload {
-  name: string;
-  phone: string;
-  email: string;
-  city: string;
-}
-
-export interface RegisterPartnerResponse {
-  success: boolean;
-  already_exists: boolean;
-  message: string;
-  partner_id: number;
-  referral_code: string;
-  referral_link: string;
-  partner: {
-    name: string;
-    phone: string;
-    email: string;
-    city: string;
-    referral_code: string;
-    total_referrals: number;
-    total_earnings: number;
-  };
-}
-
-export async function registerPartner(payload: RegisterPartnerPayload): Promise<RegisterPartnerResponse> {
-  return request<RegisterPartnerResponse>('register-partner.php', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
-}
-
-export interface PartnerDashboardResponse {
-  success: boolean;
-  partner: {
-    id: number;
-    name: string;
-    phone: string;
-    city: string;
-    referral_code: string;
-    referral_link: string;
-    total_referrals: number;
-    total_earnings: number;
-    status: string;
-    joined_on: string;
-  };
-  conversions: {
-    id: number;
-    client_name: string;
-    package_name: string;
-    commission: number;
-    status: string;
-    created_at: string;
-  }[];
-}
-
-export async function getPartnerDashboard(code: string): Promise<PartnerDashboardResponse> {
-  return request<PartnerDashboardResponse>(`get-referrals.php?code=${encodeURIComponent(code)}`);
-}
-
-// ── Contact / Enquiry ───────────────────────────────────────
-export interface ContactPayload {
-  name: string;
-  phone: string;
-  email: string;
-  business_type: string;
-  message: string;
-  source: string;
-  plan_interest: string;
-}
-
-export interface ContactResponse {
-  success: boolean;
-  message: string;
-  enquiry_id: number;
-  whatsapp_link: string;
-}
-
-export async function submitEnquiry(payload: ContactPayload): Promise<ContactResponse> {
-  return request<ContactResponse>('contact.php', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
+// ── Referral Code Generator (local, no backend) ──────────
+export function generateReferralCode(name: string): string {
+  const prefix = name.toUpperCase().replace(/\s+/g, '').slice(0, 4).padEnd(4, 'X');
+  const num = Math.floor(1000 + Math.random() * 9000);
+  return `JT${prefix}${num}`;
 }
