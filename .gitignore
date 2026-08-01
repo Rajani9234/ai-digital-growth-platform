@@ -34,7 +34,6 @@ frontend/.env
 *.sln
 *.sw?
 
-# Backend removed - frontend only project
 # PHP secrets (never commit real credentials)
-# backend/config/db.php
-# backend/config/gemini.php
+backend/config/db.php
+backend/config/gemini.php
