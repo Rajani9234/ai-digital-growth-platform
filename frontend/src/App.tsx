@@ -10,7 +10,7 @@ import './styles/globals.css';
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/ai-digital-growth-platform">
       <Navbar />
       <Routes>
         <Route path="/"              element={<Home />} />
