@@ -12,9 +12,11 @@ node_modules
 frontend/node_modules
 
 # Build output
-dist
 dist-ssr
 frontend/dist
+
+# Keep root dist for GitHub Pages (tracked)
+# dist
 
 # Local env files
 *.local
