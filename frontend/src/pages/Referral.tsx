@@ -63,11 +63,6 @@ export default function Referral() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const isFirstRender = useRef(true);
 
-  // Scroll to top when page loads
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' });
-  }, []);
-
   // Only scroll chatbot on new messages, not on first load
   useEffect(() => {
     if (isFirstRender.current) {
