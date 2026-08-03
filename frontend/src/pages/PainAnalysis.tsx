@@ -1,19 +1,26 @@
 import { useState } from 'react';
-import { Brain, ArrowRight, CheckCircle, AlertTriangle, AlertCircle, TrendingUp, Clock, Target, FileText, RotateCcw, MessageCircle, Sparkles } from 'lucide-react';
+import {
+  Brain, ArrowRight, CheckCircle, AlertTriangle, AlertCircle,
+  TrendingUp, Clock, Target, FileText, RotateCcw, MessageCircle, Sparkles,
+} from 'lucide-react';
 import type { PainPointFormData, AIReport } from '../types';
 import { submitPainAnalysis } from '../utils/api';
+import AIChat from '../components/ui/AIChat';
 
 const CHALLENGES = [
-  { id:'no-website',          label:'No website / online presence' },
-  { id:'low-sales',           label:'Low sales & footfall' },
-  { id:'competition',         label:'Losing customers to competitors' },
-  { id:'no-social',           label:'No social media presence' },
-  { id:'inventory',           label:'Inventory management issues' },
-  { id:'customer-retention',  label:'Poor customer retention' },
-  { id:'payment',             label:'Limited payment options' },
+  { id:'no-website',         label:'No website / online presence' },
+  { id:'low-sales',          label:'Low sales & footfall' },
+  { id:'competition',        label:'Losing customers to competitors' },
+  { id:'no-social',          label:'No social media presence' },
+  { id:'inventory',          label:'Inventory management issues' },
+  { id:'customer-retention', label:'Poor customer retention' },
+  { id:'payment',            label:'Limited payment options' },
 ];
 
-const INIT: PainPointFormData = { businessName:'', businessType:'', city:'', monthlyRevenue:'', currentChallenges:[], onlinePresence:'none', targetAudience:'', budget:'', additionalInfo:'' };
+const INIT: PainPointFormData = {
+  businessName:'', businessType:'', city:'', monthlyRevenue:'',
+  currentChallenges:[], onlinePresence:'none', targetAudience:'', budget:'', additionalInfo:'',
+};
 
 const SEV = {
   high:   { color:'#EF4444', icon:<AlertTriangle size={15}/>, badge:'badge-red' },
@@ -21,13 +28,20 @@ const SEV = {
   low:    { color:'#10B981', icon:<CheckCircle size={15}/>,   badge:'badge-green' },
 } as const;
 
-const STEPS = ['Analysing business profile…','Identifying pain points…','Researching competitors…','Generating recommendations…'];
+const ANALYSIS_QUICK = [
+  { label:'What is Digital Score?', value:'score' },
+  { label:'Explain recommendations', value:'recommend' },
+  { label:'How to start Phase 1?', value:'phase' },
+  { label:'Contact JhaTech', value:'contact' },
+  { label:'How long does it take?', value:'time' },
+  { label:'What does SEO mean?', value:'seo' },
+];
 
 export default function PainAnalysis() {
   const [step, setStep]     = useState<'form'|'loading'|'report'>('form');
   const [form, setForm]     = useState<PainPointFormData>(INIT);
   const [report, setReport] = useState<AIReport|null>(null);
-  const [errors, setErrors] = useState<Partial<Record<keyof PainPointFormData,string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof PainPointFormData, string>>>({});
 
   const update = (f: keyof PainPointFormData, v: string) => {
     setForm(p => ({...p,[f]:v}));
@@ -35,7 +49,8 @@ export default function PainAnalysis() {
   };
 
   const toggle = (id: string) => setForm(p => ({
-    ...p, currentChallenges: p.currentChallenges.includes(id)
+    ...p,
+    currentChallenges: p.currentChallenges.includes(id)
       ? p.currentChallenges.filter(c => c !== id)
       : [...p.currentChallenges, id],
   }));
@@ -62,14 +77,23 @@ export default function PainAnalysis() {
         current_challenges: form.currentChallenges, online_presence: form.onlinePresence,
         target_audience: form.targetAudience, budget: form.budget, additional_info: form.additionalInfo,
       });
-      setReport({
-        businessName: form.businessName,
-        summary: res.summary,
-        challenges: res.challenges,
-        recommendations: res.recommendations.map(r => ({ priority:r.priority, title:r.title, description:r.description, estimatedImpact:r.estimated_impact })),
-        digitalScore: res.digital_score,
-        actionPlan: res.action_plan.map(p => ({ phase:p.phase, timeline:p.timeline, tasks:p.tasks })),
-      });
+setReport({
+  businessName: form.businessName,
+  summary: res.summary,
+  challenges: res.challenges,
+  recommendations: res.recommendations.map((r: any) => ({
+    priority: r.priority,
+    title: r.title,
+    description: r.description,
+    estimatedImpact: r.estimated_impact,
+  })),
+  digitalScore: res.digital_score,
+  actionPlan: res.action_plan.map((p: any) => ({
+    phase: p.phase,
+    timeline: p.timeline,
+    tasks: p.tasks,
+  })),
+});
       setStep('report');
     } catch {
       const { generateBusinessReport } = await import('../utils/aiEngine');
@@ -94,241 +118,291 @@ export default function PainAnalysis() {
   };
 
   return (
-    <main style={{paddingTop:'5rem',minHeight:'100vh'}}>
+    <main style={{paddingTop:'5rem'}}>
       {/* Hero */}
       <section className="pa-hero">
         <div className="pa-hero__glow"/>
-        <div className="container" style={{textAlign:'center',position:'relative',zIndex:1}}>
-          <div className="badge badge-purple" style={{display:'inline-flex',marginBottom:'1.25rem'}}>
+        <div className="container" style={{textAlign:'center', position:'relative', zIndex:1}}>
+          <div className="badge badge-purple" style={{display:'inline-flex', marginBottom:'1.25rem'}}>
             <Brain size={13}/> AI Business Analyser
           </div>
-          <h1 className="section-title">Discover Your Business <span className="gradient-text">Growth Gaps</span></h1>
-          <p className="section-subtitle">Fill in your details and our AI generates a personalised growth report — completely free.</p>
+          <h1 className="section-title">
+            Discover Your Business <span className="gradient-text">Growth Gaps</span>
+          </h1>
+          <p className="section-subtitle">
+            Fill in your details and our AI generates a personalised growth report — completely free.
+          </p>
         </div>
       </section>
 
-      <div className="container" style={{maxWidth:820,paddingBottom:'6rem'}}>
+      {/* Two-column layout: Form + Chat */}
+      <div className="container pa-layout">
 
-        {/* FORM */}
-        {step==='form' && (
-          <form onSubmit={handleSubmit} className="pa-form animate-fade-up">
-
-            <div className="pa-section">
-              <h3 className="pa-section-title"><span className="pa-step">1</span> Business Information</h3>
-              <div className="grid-2">
-                {[{f:'businessName',p:'e.g. Priya Sarees',l:'Business Name *'},{f:'businessType',p:'e.g. Saree Shop',l:'Business Type *'},{f:'city',p:'e.g. Mumbai',l:'City *'}].map(item => (
-                  <div className="form-group" key={item.f}>
-                    <label className="form-label">{item.l}</label>
-                    <input className="form-input" placeholder={item.p}
-                      value={(form as any)[item.f]} onChange={e => update(item.f as any, e.target.value)}/>
-                    {(errors as any)[item.f] && <span className="pa-error">{(errors as any)[item.f]}</span>}
+        {/* LEFT: Form / Loading / Report */}
+        <div className="pa-main">
+          {step === 'form' && (
+            <form onSubmit={handleSubmit} className="pa-form animate-fade-up">
+              <div className="pa-section">
+                <h3 className="pa-sec-title"><span className="pa-step">1</span> Business Information</h3>
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">Business Name *</label>
+                    <input className="form-input" placeholder="e.g. Priya Sarees"
+                      value={form.businessName} onChange={e => update('businessName', e.target.value)}/>
+                    {errors.businessName && <span className="pa-err">{errors.businessName}</span>}
                   </div>
-                ))}
-                <div className="form-group">
-                  <label className="form-label">Monthly Revenue</label>
-                  <select className="form-select" value={form.monthlyRevenue} onChange={e => update('monthlyRevenue',e.target.value)}>
-                    <option value="">Select range</option>
-                    <option value="below-1L">Below ₹1 Lakh</option>
-                    <option value="1L-5L">₹1L – ₹5L</option>
-                    <option value="5L-20L">₹5L – ₹20L</option>
-                    <option value="20L+">₹20L+</option>
-                  </select>
+                  <div className="form-group">
+                    <label className="form-label">Business Type *</label>
+                    <input className="form-input" placeholder="e.g. Saree Shop"
+                      value={form.businessType} onChange={e => update('businessType', e.target.value)}/>
+                    {errors.businessType && <span className="pa-err">{errors.businessType}</span>}
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">City *</label>
+                    <input className="form-input" placeholder="e.g. Mumbai"
+                      value={form.city} onChange={e => update('city', e.target.value)}/>
+                    {errors.city && <span className="pa-err">{errors.city}</span>}
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Monthly Revenue</label>
+                    <select className="form-select" value={form.monthlyRevenue} onChange={e => update('monthlyRevenue', e.target.value)}>
+                      <option value="">Select range</option>
+                      <option value="below-1L">Below ₹1 Lakh</option>
+                      <option value="1L-5L">₹1L – ₹5L</option>
+                      <option value="5L-20L">₹5L – ₹20L</option>
+                      <option value="20L+">₹20L+</option>
+                    </select>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="pa-section">
-              <h3 className="pa-section-title"><span className="pa-step">2</span> Online Presence</h3>
-              <div className="pa-presence">
-                {[{v:'none',l:'None'},{v:'social',l:'Social Only'},{v:'website',l:'Website Only'},{v:'both',l:'Website + Social'}].map(o => (
-                  <button key={o.v} type="button" className={`pa-pres-btn ${form.onlinePresence===o.v?'pa-pres-btn--active':''}`}
-                    onClick={() => update('onlinePresence',o.v)}>{o.l}</button>
+              <div className="pa-section">
+                <h3 className="pa-sec-title"><span className="pa-step">2</span> Online Presence</h3>
+                <div className="pa-presence">
+                  {[{v:'none',l:'None'},{v:'social',l:'Social Only'},{v:'website',l:'Website Only'},{v:'both',l:'Website + Social'}].map(o => (
+                    <button key={o.v} type="button"
+                      className={`pa-pres-btn ${form.onlinePresence===o.v?'pa-pres-btn--on':''}`}
+                      onClick={() => update('onlinePresence', o.v)}>{o.l}</button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pa-section">
+                <h3 className="pa-sec-title"><span className="pa-step">3</span> Current Challenges *</h3>
+                <div className="pa-chips">
+                  {CHALLENGES.map(c => (
+                    <button key={c.id} type="button"
+                      className={`pa-chip ${form.currentChallenges.includes(c.id)?'pa-chip--on':''}`}
+                      onClick={() => toggle(c.id)}>
+                      {form.currentChallenges.includes(c.id)&&<CheckCircle size={13}/>} {c.label}
+                    </button>
+                  ))}
+                </div>
+                {(errors as any).challenges && <span className="pa-err">{(errors as any).challenges}</span>}
+              </div>
+
+              <div className="pa-section">
+                <h3 className="pa-sec-title"><span className="pa-step">4</span> Budget & Details</h3>
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">Target Audience</label>
+                    <input className="form-input" placeholder="e.g. Women aged 25–50"
+                      value={form.targetAudience} onChange={e => update('targetAudience', e.target.value)}/>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Monthly Budget *</label>
+                    <select className="form-select" value={form.budget} onChange={e => update('budget', e.target.value)}>
+                      <option value="">Select budget</option>
+                      <option value="below-5k">Below ₹5,000</option>
+                      <option value="5k-10k">₹5,000 – ₹10,000</option>
+                      <option value="10k-25k">₹10,000 – ₹25,000</option>
+                      <option value="25k+">₹25,000+</option>
+                    </select>
+                    {errors.budget && <span className="pa-err">{errors.budget}</span>}
+                  </div>
+                </div>
+                <div className="form-group" style={{marginTop:'1rem'}}>
+                  <label className="form-label">Additional Information</label>
+                  <textarea className="form-textarea" rows={3}
+                    placeholder="Anything else about your business or goals…"
+                    value={form.additionalInfo} onChange={e => update('additionalInfo', e.target.value)}/>
+                </div>
+              </div>
+
+              <button type="submit" className="btn btn-primary btn-lg" style={{width:'100%',justifyContent:'center'}}>
+                <Sparkles size={18}/> Generate My Free AI Report <ArrowRight size={18}/>
+              </button>
+            </form>
+          )}
+
+          {step === 'loading' && (
+            <div className="pa-loading animate-fade">
+              <div className="pa-spinner-wrap"><div className="pa-spinner"/><Brain size={26} color="#8B5CF6"/></div>
+              <h3>AI is Analysing Your Business…</h3>
+              <p>Scanning market data, competitors and growth opportunities.</p>
+              <div className="pa-steps">
+                {['Analysing business profile…','Identifying pain points…','Researching competitors…','Generating recommendations…'].map((s,i)=>(
+                  <div key={s} className="pa-step-item" style={{animationDelay:`${i*.6}s`}}>
+                    <div className="pa-step-dot"/><span>{s}</span>
+                  </div>
                 ))}
               </div>
             </div>
+          )}
 
-            <div className="pa-section">
-              <h3 className="pa-section-title"><span className="pa-step">3</span> Current Challenges *</h3>
-              <div className="pa-chips">
-                {CHALLENGES.map(c => (
-                  <button key={c.id} type="button" className={`pa-chip ${form.currentChallenges.includes(c.id)?'pa-chip--active':''}`}
-                    onClick={() => toggle(c.id)}>
-                    {form.currentChallenges.includes(c.id)&&<CheckCircle size={13}/>} {c.label}
+          {step === 'report' && report && (
+            <div className="pa-report animate-fade-up">
+              <div className="pa-report__header">
+                <div style={{flex:1}}>
+                  <div className="badge badge-green" style={{marginBottom:'.75rem'}}><CheckCircle size={12}/> Report Ready</div>
+                  <h2 style={{fontSize:'1.8rem',fontWeight:900,marginBottom:'.5rem'}}>{report.businessName}</h2>
+                  <p style={{color:'var(--gray-400)',lineHeight:1.7,fontSize:'.95rem'}}>{report.summary}</p>
+                </div>
+                <div style={{textAlign:'center',flexShrink:0}}>
+                  <ScoreRing score={report.digitalScore}/>
+                  <p style={{fontSize:'.72rem',color:'var(--gray-400)',marginTop:'.3rem'}}>Digital Readiness</p>
+                </div>
+              </div>
+
+              <div className="pa-report__sec">
+                <h3 className="pa-report__sec-h"><AlertTriangle size={17} color="#EF4444"/> Key Challenges</h3>
+                {report.challenges.map((c,i)=>(
+                  <div key={i} className="pa-challenge" style={{borderLeftColor:SEV[c.severity].color}}>
+                    <div className="pa-challenge__head">
+                      <span style={{color:SEV[c.severity].color}}>{SEV[c.severity].icon}</span>
+                      <strong>{c.title}</strong>
+                      <span className={`badge ${SEV[c.severity].badge}`}>{c.severity}</span>
+                    </div>
+                    <p>{c.description}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pa-report__sec">
+                <h3 className="pa-report__sec-h"><Target size={17} color="#8B5CF6"/> Recommendations</h3>
+                {report.recommendations.map((r,i)=>(
+                  <div key={i} className="pa-rec">
+                    <div className="pa-rec__num">{r.priority}</div>
+                    <div>
+                      <strong>{r.title}</strong>
+                      <p>{r.description}</p>
+                      <span className="pa-rec__impact"><TrendingUp size={12}/> {r.estimatedImpact}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pa-report__sec">
+                <h3 className="pa-report__sec-h"><Clock size={17} color="#F59E0B"/> 90-Day Action Plan</h3>
+                {report.actionPlan.map((ph,i)=>(
+                  <div key={i} className="pa-phase">
+                    <div className="pa-phase__head">
+                      <span className="pa-phase__num">{i+1}</span>
+                      <strong>{ph.phase}</strong>
+                      <span className="badge badge-purple"><Clock size={10}/> {ph.timeline}</span>
+                    </div>
+                    <ul className="pa-phase__tasks">
+                      {ph.tasks.map((t,j)=><li key={j}><CheckCircle size={13} color="#10B981"/>{t}</li>)}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pa-report__cta">
+                <div><h4>Ready to implement this plan?</h4><p>Talk to our experts and start growing today.</p></div>
+                <div style={{display:'flex',gap:'.75rem',flexWrap:'wrap'}}>
+                  <a href={`https://wa.me/919999999999?text=Hi!+AI+report+for+${encodeURIComponent(report.businessName)}`}
+                    target="_blank" rel="noopener noreferrer" className="btn btn-whatsapp">
+                    <MessageCircle size={15}/> WhatsApp
+                  </a>
+                  <button className="btn btn-secondary" onClick={()=>{setForm(INIT);setReport(null);setStep('form')}}>
+                    <RotateCcw size={15}/> New Analysis
                   </button>
-                ))}
-              </div>
-              {(errors as any).challenges && <span className="pa-error">{(errors as any).challenges}</span>}
-            </div>
-
-            <div className="pa-section">
-              <h3 className="pa-section-title"><span className="pa-step">4</span> Budget & Details</h3>
-              <div className="grid-2">
-                <div className="form-group">
-                  <label className="form-label">Target Audience</label>
-                  <input className="form-input" placeholder="e.g. Women aged 25–50" value={form.targetAudience} onChange={e => update('targetAudience',e.target.value)}/>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Monthly Marketing Budget *</label>
-                  <select className="form-select" value={form.budget} onChange={e => update('budget',e.target.value)}>
-                    <option value="">Select budget</option>
-                    <option value="below-5k">Below ₹5,000</option>
-                    <option value="5k-10k">₹5,000 – ₹10,000</option>
-                    <option value="10k-25k">₹10,000 – ₹25,000</option>
-                    <option value="25k+">₹25,000+</option>
-                  </select>
-                  {errors.budget && <span className="pa-error">{errors.budget}</span>}
+                  <button className="btn btn-secondary" onClick={()=>window.print()}>
+                    <FileText size={15}/> Print
+                  </button>
                 </div>
               </div>
-              <div className="form-group" style={{marginTop:'1rem'}}>
-                <label className="form-label">Additional Information</label>
-                <textarea className="form-textarea" placeholder="Anything else about your business or goals…"
-                  value={form.additionalInfo} onChange={e => update('additionalInfo',e.target.value)} rows={3}/>
-              </div>
             </div>
+          )}
+        </div>
 
-            <button type="submit" className="btn btn-primary btn-lg" style={{width:'100%',justifyContent:'center'}}>
-              <Sparkles size={18}/> Generate My Free AI Report <ArrowRight size={18}/>
-            </button>
-          </form>
-        )}
-
-        {/* LOADING */}
-        {step==='loading' && (
-          <div className="pa-loading animate-fade">
-            <div className="pa-loading__ring"><div className="pa-spinner"/><Brain size={26} color="#8B5CF6"/></div>
-            <h3>AI is Analysing Your Business…</h3>
-            <p>Scanning market data, competitors and growth opportunities.</p>
-            <div className="pa-loading__steps">
-              {STEPS.map((s,i) => (
-                <div key={s} className="pa-loading__step" style={{animationDelay:`${i*.6}s`}}>
-                  <div className="pa-loading__dot"/><span>{s}</span>
-                </div>
-              ))}
-            </div>
+        {/* RIGHT: AI Chat */}
+        <div className="pa-chat-col">
+          <AIChat
+            mode="analysis"
+            title="AI Report Assistant"
+            subtitle="Ask about your report"
+            placeholder="e.g. What does my score mean?"
+            welcomeMsg="Hi! 👋 I'm here to help you understand the Pain Analysis form and your AI report. Fill the form on the left to generate your free report!"
+            quickQuestions={ANALYSIS_QUICK}
+            sticky={false}
+            systemPrompt="You are an AI business report assistant for Indian local businesses. Answer only with practical, concise, and helpful business guidance about digital score, recommendations, action plan, website development, SEO, social media, WhatsApp marketing, pricing, and lead generation. If the question is unrelated, still answer politely and naturally with Gemini."
+          />
+          <div className="pa-chat-tip">
+            <Sparkles size={13} color="#8B5CF6"/>
+            <span>Tip: After generating your report, ask the AI to explain any recommendation!</span>
           </div>
-        )}
-
-        {/* REPORT */}
-        {step==='report' && report && (
-          <div className="pa-report animate-fade-up">
-            <div className="pa-report__header">
-              <div style={{flex:1}}>
-                <div className="badge badge-green" style={{marginBottom:'.75rem'}}><CheckCircle size={12}/> Report Ready</div>
-                <h2 style={{fontSize:'1.8rem',fontWeight:900,marginBottom:'.5rem'}}>{report.businessName}</h2>
-                <p style={{color:'var(--gray-400)',lineHeight:1.7,fontSize:'.95rem'}}>{report.summary}</p>
-              </div>
-              <div style={{textAlign:'center',flexShrink:0}}>
-                <ScoreRing score={report.digitalScore}/>
-                <p style={{fontSize:'.75rem',color:'var(--gray-400)',marginTop:'.35rem'}}>Digital Readiness</p>
-              </div>
-            </div>
-
-            <div className="pa-report__section">
-              <h3 className="pa-report__sec-title"><AlertTriangle size={17} color="#EF4444"/> Key Challenges</h3>
-              {report.challenges.map((c,i) => (
-                <div key={i} className="pa-challenge" style={{borderLeftColor:SEV[c.severity].color}}>
-                  <div className="pa-challenge__head">
-                    <span style={{color:SEV[c.severity].color}}>{SEV[c.severity].icon}</span>
-                    <strong>{c.title}</strong>
-                    <span className={`badge ${SEV[c.severity].badge}`}>{c.severity}</span>
-                  </div>
-                  <p>{c.description}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="pa-report__section">
-              <h3 className="pa-report__sec-title"><Target size={17} color="#8B5CF6"/> Recommendations</h3>
-              {report.recommendations.map((r,i) => (
-                <div key={i} className="pa-rec">
-                  <div className="pa-rec__num">{r.priority}</div>
-                  <div>
-                    <strong>{r.title}</strong>
-                    <p>{r.description}</p>
-                    <span className="pa-rec__impact"><TrendingUp size={12}/> {r.estimatedImpact}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="pa-report__section">
-              <h3 className="pa-report__sec-title"><Clock size={17} color="#F59E0B"/> 90-Day Action Plan</h3>
-              {report.actionPlan.map((ph,i) => (
-                <div key={i} className="pa-phase">
-                  <div className="pa-phase__head">
-                    <span className="pa-phase__num">{i+1}</span>
-                    <strong>{ph.phase}</strong>
-                    <span className="badge badge-purple"><Clock size={10}/> {ph.timeline}</span>
-                  </div>
-                  <ul className="pa-phase__tasks">
-                    {ph.tasks.map((t,j) => <li key={j}><CheckCircle size={13} color="#10B981"/>{t}</li>)}
-                  </ul>
-                </div>
-              ))}
-            </div>
-
-            <div className="pa-report__cta">
-              <div><h4>Ready to implement this plan?</h4><p>Talk to our experts and start growing today.</p></div>
-              <div style={{display:'flex',gap:'.75rem',flexWrap:'wrap'}}>
-                <a href={`https://wa.me/919999999999?text=Hi!+I+got+my+AI+report+for+${encodeURIComponent(report.businessName)}.`}
-                  target="_blank" rel="noopener noreferrer" className="btn btn-whatsapp">
-                  <MessageCircle size={15}/> WhatsApp
-                </a>
-                <button className="btn btn-secondary" onClick={() => {setForm(INIT);setReport(null);setStep('form')}}>
-                  <RotateCcw size={15}/> New Analysis
-                </button>
-                <button className="btn btn-secondary" onClick={() => window.print()}>
-                  <FileText size={15}/> Print
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        </div>
       </div>
 
       <style>{`
         .pa-hero{padding:5rem 0 3rem;position:relative;overflow:hidden}
         .pa-hero__glow{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(108,60,225,.2) 0%,transparent 65%);pointer-events:none}
-        .pa-form{background:var(--dark-card);border:1px solid var(--dark-border);border-radius:var(--radius-2xl);padding:2.5rem;display:flex;flex-direction:column;gap:2.5rem}
-        .pa-section{display:flex;flex-direction:column;gap:1.25rem}
-        .pa-section-title{display:flex;align-items:center;gap:.75rem;font-size:1rem;font-weight:700;color:var(--gray-200);padding-bottom:.75rem;border-bottom:1px solid var(--dark-border)}
-        .pa-step{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#6C3CE1,#8B5CF6);font-size:.75rem;font-weight:800;flex-shrink:0}
-        .pa-error{font-size:.8rem;color:#EF4444;margin-top:2px}
-        .pa-presence{display:flex;gap:.65rem;flex-wrap:wrap}
-        .pa-pres-btn{padding:.55rem 1.2rem;border-radius:var(--radius-full);background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.08);color:var(--gray-400);font-size:.875rem;font-weight:500;transition:var(--transition)}
+
+        .pa-layout{display:grid;grid-template-columns:1fr 380px;gap:2rem;align-items:start;padding-bottom:6rem;margin-top:1rem}
+        .pa-main{min-width:0}
+        .pa-chat-col{display:flex;flex-direction:column;gap:.75rem}
+        .pa-chat-tip{display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:var(--gray-500);padding:.6rem .9rem;background:rgba(108,60,225,.06);border:1px solid rgba(108,60,225,.15);border-radius:var(--radius-md)}
+
+        .pa-form{background:var(--dark-card);border:1px solid var(--dark-border);border-radius:var(--radius-2xl);padding:2rem;display:flex;flex-direction:column;gap:2rem}
+        .pa-section{display:flex;flex-direction:column;gap:1.1rem}
+        .pa-sec-title{display:flex;align-items:center;gap:.65rem;font-size:.95rem;font-weight:700;color:var(--gray-200);padding-bottom:.65rem;border-bottom:1px solid var(--dark-border)}
+        .pa-step{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#6C3CE1,#8B5CF6);font-size:.72rem;font-weight:800;flex-shrink:0}
+        .pa-err{font-size:.78rem;color:#EF4444;margin-top:2px}
+
+        .pa-presence{display:flex;gap:.6rem;flex-wrap:wrap}
+        .pa-pres-btn{padding:.5rem 1.1rem;border-radius:var(--radius-full);background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.08);color:var(--gray-400);font-size:.84rem;font-weight:500;transition:var(--transition)}
         .pa-pres-btn:hover{border-color:#8B5CF6;color:var(--white)}
-        .pa-pres-btn--active{background:rgba(108,60,225,.18);border-color:#8B5CF6;color:#8B5CF6}
-        .pa-chips{display:flex;flex-wrap:wrap;gap:.6rem}
-        .pa-chip{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1rem;border-radius:var(--radius-full);background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.08);color:var(--gray-400);font-size:.84rem;font-weight:500;transition:var(--transition)}
+        .pa-pres-btn--on{background:rgba(108,60,225,.18);border-color:#8B5CF6;color:#8B5CF6}
+
+        .pa-chips{display:flex;flex-wrap:wrap;gap:.55rem}
+        .pa-chip{display:inline-flex;align-items:center;gap:.35rem;padding:.45rem .95rem;border-radius:var(--radius-full);background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.08);color:var(--gray-400);font-size:.82rem;font-weight:500;transition:var(--transition)}
         .pa-chip:hover{border-color:#8B5CF6;color:var(--white)}
-        .pa-chip--active{background:rgba(108,60,225,.18);border-color:#6C3CE1;color:#8B5CF6}
-        .pa-loading{text-align:center;padding:5rem 2rem;display:flex;flex-direction:column;align-items:center;gap:1.5rem}
-        .pa-loading__ring{width:80px;height:80px;position:relative;display:flex;align-items:center;justify-content:center}
+        .pa-chip--on{background:rgba(108,60,225,.18);border-color:#6C3CE1;color:#8B5CF6}
+
+        .pa-loading{text-align:center;padding:4rem 2rem;display:flex;flex-direction:column;align-items:center;gap:1.5rem;background:var(--dark-card);border:1px solid var(--dark-border);border-radius:var(--radius-2xl)}
+        .pa-spinner-wrap{width:70px;height:70px;position:relative;display:flex;align-items:center;justify-content:center}
         .pa-spinner{position:absolute;inset:0;border-radius:50%;border:3px solid rgba(108,60,225,.15);border-top-color:#8B5CF6;animation:spin-slow 1s linear infinite}
-        .pa-loading h3{font-size:1.4rem}.pa-loading p{color:var(--gray-400)}
-        .pa-loading__steps{display:flex;flex-direction:column;gap:.85rem;width:100%;max-width:300px}
-        .pa-loading__step{display:flex;align-items:center;gap:.75rem;font-size:.875rem;color:var(--gray-400);animation:fadeInUp .5s ease forwards;opacity:0}
-        .pa-loading__dot{width:8px;height:8px;border-radius:50%;background:#8B5CF6;animation:pulse-glow 1.5s ease-in-out infinite;flex-shrink:0}
-        .pa-report{display:flex;flex-direction:column;gap:1.5rem}
-        .pa-report__header{display:flex;justify-content:space-between;align-items:flex-start;gap:2rem;background:var(--dark-card);border:1px solid var(--dark-border);border-radius:var(--radius-2xl);padding:2.5rem}
-        .pa-report__section{background:var(--dark-card);border:1px solid var(--dark-border);border-radius:var(--radius-xl);padding:2rem;display:flex;flex-direction:column;gap:1rem}
-        .pa-report__sec-title{display:flex;align-items:center;gap:.6rem;font-size:1.05rem;font-weight:700;margin-bottom:.5rem}
-        .pa-challenge{padding:1.1rem 1.25rem;background:rgba(255,255,255,.025);border-radius:var(--radius-md);border-left:3px solid}
-        .pa-challenge__head{display:flex;align-items:center;gap:.65rem;margin-bottom:.4rem;flex-wrap:wrap}
-        .pa-challenge p{font-size:.875rem;color:var(--gray-400);margin:0}
-        .pa-rec{display:flex;gap:1.25rem;align-items:flex-start}
-        .pa-rec__num{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6C3CE1,#8B5CF6);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.9rem;flex-shrink:0}
-        .pa-rec strong{display:block;margin-bottom:.3rem}.pa-rec p{font-size:.875rem;color:var(--gray-400);margin:0 0 .5rem}
-        .pa-rec__impact{display:inline-flex;align-items:center;gap:.35rem;font-size:.8rem;color:#10B981;font-weight:600}
+        .pa-loading h3{font-size:1.3rem}.pa-loading p{color:var(--gray-400);font-size:.9rem}
+        .pa-steps{display:flex;flex-direction:column;gap:.75rem;width:100%;max-width:280px}
+        .pa-step-item{display:flex;align-items:center;gap:.65rem;font-size:.84rem;color:var(--gray-400);animation:fadeInUp .5s ease forwards;opacity:0}
+        .pa-step-dot{width:7px;height:7px;border-radius:50%;background:#8B5CF6;animation:pulse-glow 1.5s ease-in-out infinite;flex-shrink:0}
+
+        .pa-report{display:flex;flex-direction:column;gap:1.25rem}
+        .pa-report__header{display:flex;justify-content:space-between;align-items:flex-start;gap:1.5rem;background:var(--dark-card);border:1px solid var(--dark-border);border-radius:var(--radius-2xl);padding:2rem}
+        .pa-report__sec{background:var(--dark-card);border:1px solid var(--dark-border);border-radius:var(--radius-xl);padding:1.75rem;display:flex;flex-direction:column;gap:1rem}
+        .pa-report__sec-h{display:flex;align-items:center;gap:.6rem;font-size:1rem;font-weight:700;margin-bottom:.25rem}
+        .pa-challenge{padding:1rem 1.15rem;background:rgba(255,255,255,.025);border-radius:var(--radius-md);border-left:3px solid}
+        .pa-challenge__head{display:flex;align-items:center;gap:.6rem;margin-bottom:.35rem;flex-wrap:wrap}
+        .pa-challenge p{font-size:.855rem;color:var(--gray-400);margin:0}
+        .pa-rec{display:flex;gap:1.1rem;align-items:flex-start}
+        .pa-rec__num{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6C3CE1,#8B5CF6);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.88rem;flex-shrink:0}
+        .pa-rec strong{display:block;margin-bottom:.25rem;font-size:.9rem}
+        .pa-rec p{font-size:.855rem;color:var(--gray-400);margin:0 0 .4rem}
+        .pa-rec__impact{display:inline-flex;align-items:center;gap:.3rem;font-size:.78rem;color:#10B981;font-weight:600}
         .pa-phase{border:1px solid var(--dark-border);border-radius:var(--radius-md);overflow:hidden}
-        .pa-phase__head{display:flex;align-items:center;gap:1rem;padding:1rem 1.25rem;background:rgba(108,60,225,.07);border-bottom:1px solid var(--dark-border);flex-wrap:wrap}
-        .pa-phase__num{width:26px;height:26px;border-radius:50%;background:#6C3CE1;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.82rem;flex-shrink:0}
-        .pa-phase__head strong{font-size:.95rem;flex:1}
-        .pa-phase__tasks{list-style:none;padding:1rem 1.25rem;display:flex;flex-direction:column;gap:.55rem}
-        .pa-phase__tasks li{display:flex;align-items:center;gap:.65rem;font-size:.875rem;color:var(--gray-300)}
-        .pa-report__cta{display:flex;justify-content:space-between;align-items:center;gap:1.5rem;flex-wrap:wrap;background:linear-gradient(135deg,rgba(108,60,225,.18),rgba(139,92,246,.08));border:1px solid var(--dark-border);border-radius:var(--radius-xl);padding:2rem}
-        .pa-report__cta h4{font-size:1.1rem;margin-bottom:.3rem}.pa-report__cta p{font-size:.875rem;color:var(--gray-400);margin:0}
-        @media(max-width:640px){.pa-form{padding:1.5rem}.pa-report__header{flex-direction:column;align-items:center;text-align:center}.pa-report__cta{flex-direction:column;text-align:center}}
+        .pa-phase__head{display:flex;align-items:center;gap:.85rem;padding:.9rem 1.15rem;background:rgba(108,60,225,.07);border-bottom:1px solid var(--dark-border);flex-wrap:wrap}
+        .pa-phase__num{width:24px;height:24px;border-radius:50%;background:#6C3CE1;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;flex-shrink:0}
+        .pa-phase__head strong{font-size:.9rem;flex:1}
+        .pa-phase__tasks{list-style:none;padding:.9rem 1.15rem;display:flex;flex-direction:column;gap:.5rem}
+        .pa-phase__tasks li{display:flex;align-items:center;gap:.6rem;font-size:.855rem;color:var(--gray-300)}
+        .pa-report__cta{display:flex;justify-content:space-between;align-items:center;gap:1.25rem;flex-wrap:wrap;background:linear-gradient(135deg,rgba(108,60,225,.18),rgba(139,92,246,.08));border:1px solid var(--dark-border);border-radius:var(--radius-xl);padding:1.75rem}
+        .pa-report__cta h4{font-size:1rem;margin-bottom:.25rem}
+        .pa-report__cta p{font-size:.855rem;color:var(--gray-400);margin:0}
+
+        @media(max-width:1100px){.pa-layout{grid-template-columns:1fr}}
+        @media(max-width:640px){.pa-form{padding:1.25rem}.pa-report__header{flex-direction:column;align-items:center;text-align:center}.pa-report__cta{flex-direction:column;text-align:center}}
       `}</style>
     </main>
   );

@@ -1,25 +1,4 @@
-// ============================================================
-// Gemini API — Direct frontend call (no PHP backend needed)
-// ============================================================
-
-const GEMINI_KEY = import.meta.env.VITE_GEMINI_API_KEY ?? '';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`;
-
-async function askGemini(prompt: string): Promise<string> {
-  const res = await fetch(GEMINI_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
-    }),
-  });
-  if (!res.ok) throw new Error(`Gemini error: ${res.status}`);
-  const data = await res.json();
-  return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-}
-
-// ── Types ──────────────────────────────────────────────────
+import { askGeminiJson } from '../services/gemini';
 
 export interface PainAnalysisPayload {
   business_name: string;
@@ -75,9 +54,7 @@ Return this exact JSON:
 }`;
 
   try {
-    let text = await askGemini(prompt);
-    text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/,'').trim();
-    return JSON.parse(text) as PainAnalysisReport;
+    return await askGeminiJson<PainAnalysisReport>(prompt);
   } catch {
     return buildFallbackReport(payload);
   }
@@ -114,4 +91,24 @@ function buildFallbackReport(form: PainAnalysisPayload): PainAnalysisReport {
 export function generateReferralCode(name: string): string {
   const prefix = name.toUpperCase().replace(/\s+/g,'').slice(0,4).padEnd(4,'X');
   return `JT${prefix}${Math.floor(1000 + Math.random() * 9000)}`;
+}
+
+export interface RegisterPartnerPayload {
+  name: string;
+  phone: string;
+  email?: string;
+  city: string;
+}
+
+export async function registerPartner(
+  partner: RegisterPartnerPayload
+) {
+  return {
+    partner: {
+      ...partner,
+      referral_code: generateReferralCode(partner.name),
+      total_referrals: 0,
+      total_earnings: 0,
+    },
+  };
 }

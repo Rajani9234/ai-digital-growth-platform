@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, BarChart2, DollarSign, Users, TrendingUp, CheckCircle, Star, Zap, Globe, MessageCircle, Sparkles, Shield, Clock } from 'lucide-react';
+import heroImage from "../assets/hero.png";
 
 const stats = [
   { value:'500+',  label:'Businesses Grown',   icon:'🚀' },
@@ -30,33 +31,47 @@ export default function Home() {
         <div className="hero__orb hero__orb--1" />
         <div className="hero__orb hero__orb--2" />
         <div className="container hero__content">
-          <div className="badge badge-purple animate-fade-up" style={{marginBottom:'1.5rem'}}>
-            <Sparkles size={12}/> AI-Powered Digital Growth Platform
-          </div>
-          <h1 className="hero__title animate-fade-up">
-            Grow Your Local Business<br/>
-            <span className="gradient-text">10x with AI & Digital Marketing</span>
-          </h1>
-          <p className="hero__subtitle animate-fade-up">
-            From saree shops to electronics stores — we help Indian businesses build a powerful online presence, attract more customers, and scale revenue with data-driven strategies.
-          </p>
-          <div className="hero__ctas animate-fade-up">
-            <Link to="/pain-analysis" className="btn btn-primary btn-lg">
-              <Zap size={17}/> Analyse My Business Free <ArrowRight size={17}/>
-            </Link>
-            <Link to="/pricing" className="btn btn-secondary btn-lg">View Pricing</Link>
-          </div>
-          <div className="hero__stats animate-fade-up">
-            {stats.map(s => (
-              <div key={s.label} className="hero__stat">
-                <span className="hero__stat-emoji">{s.icon}</span>
-                <span className="gradient-text hero__stat-value">{s.value}</span>
-                <span className="hero__stat-label">{s.label}</span>
+          <div className="hero__grid">
+            <div className="hero__copy animate-fade-up">
+              <div className="badge badge-purple hero__eyebrow">
+                <Sparkles size={12}/> AI-Powered Digital Growth Platform
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
+              <h1 className="hero__title">
+                Grow Your Local Business<br/>
+                <span className="gradient-text">10x with AI & Digital Marketing</span>
+              </h1>
+              <p className="hero__subtitle">
+                From saree shops to electronics stores — we help Indian businesses build a powerful online presence, attract more customers, and scale revenue with data-driven strategies.
+              </p>
+              <div className="hero__ctas">
+                <Link to="/pain-analysis" className="btn btn-primary btn-lg">
+                  <Zap size={17}/> Analyse My Business Free <ArrowRight size={17}/>
+                </Link>
+                <Link to="/pricing" className="btn btn-secondary btn-lg">View Pricing</Link>
+              </div>
+              <div className="hero__stats">
+                {stats.map(s => (
+                  <div key={s.label} className="hero__stat">
+                    <span className="hero__stat-emoji">{s.icon}</span>
+                    <span className="gradient-text hero__stat-value">{s.value}</span>
+                    <span className="hero__stat-label">{s.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+<div className="hero__visual animate-fade-up">
+  <div className="hero__visual-card">
+    <img
+      src={heroImage}
+      alt="AI Digital Growth Platform"
+      className="hero-dashboard-image"
+    />
+  </div>
+</div>
+
+      </div> {/* hero__grid */}
+    </div>   {/* container hero__content */}
+</section>
 
       {/* FEATURES */}
       <section className="section feat-section">
@@ -167,17 +182,34 @@ export default function Home() {
         .hero__orb{position:absolute;border-radius:50%;pointer-events:none;filter:blur(80px)}
         .hero__orb--1{width:500px;height:500px;background:rgba(108,60,225,.1);top:-100px;left:-100px;animation:float 8s ease-in-out infinite}
         .hero__orb--2{width:400px;height:400px;background:rgba(245,158,11,.07);bottom:-50px;right:-80px;animation:float 10s ease-in-out infinite reverse}
-        .hero__content{text-align:center;position:relative;z-index:1}
+        .hero__content{position:relative;z-index:1}
+        .hero__grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(320px,.9fr);gap:2.5rem;align-items:center}
+        .hero__copy{text-align:left}
+        .hero__eyebrow{display:inline-flex;margin-bottom:1.25rem}
         .hero__title{font-size:clamp(2.4rem,5.5vw,4.2rem);font-weight:900;line-height:1.08;margin-bottom:1.5rem;letter-spacing:-.02em}
-        .hero__subtitle{font-size:clamp(1rem,2vw,1.2rem);color:var(--gray-400);max-width:620px;margin:0 auto 2.75rem;line-height:1.8}
-        .hero__ctas{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-bottom:4rem}
-        .hero__stats{display:flex;justify-content:center;flex-wrap:wrap;max-width:720px;margin:0 auto;background:rgba(255,255,255,.03);border:1px solid var(--dark-border);border-radius:var(--radius-xl);overflow:hidden;backdrop-filter:blur(20px)}
-        .hero__stat{flex:1;min-width:140px;text-align:center;padding:1.75rem 1rem;border-right:1px solid var(--dark-border)}
+        .hero__subtitle{font-size:clamp(1rem,2vw,1.2rem);color:var(--gray-400);max-width:620px;margin:0 0 2.25rem;line-height:1.8}
+        .hero__ctas{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:2.25rem}
+        .hero__stats{display:flex;flex-wrap:wrap;max-width:720px;background:rgba(255,255,255,.03);border:1px solid var(--dark-border);border-radius:var(--radius-xl);overflow:hidden;backdrop-filter:blur(20px)}
+        .hero__stat{flex:1;min-width:140px;text-align:center;padding:1.35rem 1rem;border-right:1px solid var(--dark-border)}
         .hero__stat:last-child{border-right:none}
         .hero__stat-emoji{display:block;font-size:1.4rem;margin-bottom:.4rem}
         .hero__stat-value{display:block;font-size:1.9rem;font-weight:900;font-family:var(--font-heading);line-height:1;margin-bottom:.35rem}
         .hero__stat-label{font-size:.76rem;color:var(--gray-500);text-transform:uppercase;letter-spacing:.06em}
 
+        .hero__visual{display:flex;justify-content:center}
+hero__visual-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;gap:.75rem}
+        .hero__visual-pill{display:inline-flex;align-items:center;padding:.28rem .7rem;border-radius:var(--radius-full);font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:rgba(255,255,255,.06);color:var(--gray-300)}
+        .hero__visual-pill--accent{background:rgba(108,60,225,.18);color:#c4b5fd}
+        .hero__visual-graphic{position:relative;aspect-ratio:1.1/0.82;border-radius:var(--radius-xl);background:radial-gradient(circle at 50% 35%,rgba(139,92,246,.2),transparent 35%),linear-gradient(145deg,rgba(15,23,42,.85),rgba(17,15,36,.95));border:1px solid rgba(139,92,246,.18);overflow:hidden;display:flex;align-items:center;justify-content:center;margin-bottom:1rem}
+        .hero__visual-core{position:relative;width:132px;height:132px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(108,60,225,.22),rgba(245,158,11,.2));box-shadow:0 0 0 18px rgba(108,60,225,.06),0 0 70px rgba(139,92,246,.28);color:#fff}
+        .hero__visual-core-glow{position:absolute;inset:14px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.45),rgba(255,255,255,0) 65%);filter:blur(10px);opacity:.55}
+        .hero__visual-orbit{position:absolute;border-radius:50%;border:1px solid rgba(139,92,246,.22)}
+        .hero__visual-orbit--1{width:220px;height:220px;animation:spin-slow 26s linear infinite}
+        .hero__visual-orbit--2{width:300px;height:300px;border-style:dashed;opacity:.45;animation:spin-slow 36s linear infinite reverse}
+        .hero__visual-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem}
+        .hero__visual-metrics div{padding:.85rem .8rem;border-radius:var(--radius-md);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);text-align:center}
+        .hero__visual-metrics strong{display:block;font-size:1rem;font-weight:900;color:#fff;margin-bottom:.15rem}
+        .hero__visual-metrics span{font-size:.72rem;color:var(--gray-400)}
         .feat-section{background:rgba(255,255,255,.012)}
         .feat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.5rem}
         .feat-card{position:relative;display:flex;flex-direction:column;gap:1rem;padding:2rem;background:var(--dark-card);border:1px solid var(--dark-border);border-radius:var(--radius-xl);text-decoration:none;overflow:hidden;transition:var(--transition)}
@@ -225,10 +257,64 @@ export default function Home() {
         .cta-sec__title{font-size:clamp(1.5rem,3vw,2.2rem);font-weight:900;margin-bottom:.5rem;letter-spacing:-.02em}
         .cta-sec__sub{color:var(--gray-400);font-size:.975rem}
         .cta-sec__btns{display:flex;gap:1rem;flex-wrap:wrap}
+        /* HERO VISUAL CONTAINER STYLING */
+        .hero__visual {
+          display: flex;
+          justify-content: flex-end;
+          align-items: center;
+          width: 100%;
+        }
+        .hero__visual-card {
+          position: relative;
+          width: 100%;
+          max-width: 560px;
+          background: rgba(18, 20, 32, 0.7);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 24px;
+          padding: 12px;
+          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 50px rgba(139, 92, 246, 0.22);
+          transition: all 0.3s ease;
+        }
+        .hero__visual-card:hover {
+          border-color: rgba(139, 92, 246, 0.35);
+          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 65px rgba(139, 92, 246, 0.35);
+        }
+        .hero-dashboard-image {
+          width: 100%;
+          height: auto;
+          display: block;
+          border-radius: 16px;
+          object-fit: cover;
+        }
 
-        @media(max-width:900px){.why-grid{grid-template-columns:1fr;gap:3rem}.why-card--offset{margin-left:0}.cta-sec__inner{flex-direction:column;text-align:center}.cta-sec__btns{justify-content:center}}
-        @media(max-width:640px){.feat-grid{grid-template-columns:1fr}.hero__stat{min-width:120px;padding:1.25rem .75rem}.trust-bar__inner{gap:1.5rem}}
+        /* FLOATING OVERLAY BADGE (+340% REVENUE) */
+        .hero__floating-badge {
+          position: absolute;
+          bottom: -18px;
+          left: -20px;
+          background: rgba(15, 17, 28, 0.92);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          border-radius: 16px;
+          padding: 10px 16px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(168, 85, 247, 0.2);
+          z-index: 10;
+          animation: badgeFloat 4s ease-in-out infinite alternate;
+        }
+
+
+
+
+        @media(max-width:900px){.hero{padding:8rem 0 5rem}.hero__grid{grid-template-columns:1fr;gap:2rem}.hero__copy{text-align:center}.hero__subtitle{margin-left:auto;margin-right:auto}.hero__ctas{justify-content:center}.hero__stats{justify-content:center}.why-grid{grid-template-columns:1fr;gap:3rem}.why-card--offset{margin-left:0}.cta-sec__inner{flex-direction:column;text-align:center}.cta-sec__btns{justify-content:center}}
+        @media(max-width:640px){.feat-grid{grid-template-columns:1fr}.hero__title{font-size:clamp(2.1rem,9vw,3rem)}.hero__stat{min-width:120px;padding:1.25rem .75rem}.hero__visual-card{padding:.95rem}.hero__visual-metrics{grid-template-columns:1fr}.trust-bar__inner{gap:1.5rem}}
       `}</style>
     </main>
   );
 }
+
